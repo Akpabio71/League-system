@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Registrations — Admin</title>
+  <style>
+    body{font-family:Inter,system-ui,Arial;padding:20px;background:#f6f8fb}
+    .card{background:#fff;padding:16px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.06);max-width:900px;margin:auto}
+    input,button,select{padding:8px 10px;margin:6px 0;border-radius:6px;border:1px solid #ddd}
+    table{width:100%;border-collapse:collapse}
+    td,th{border:1px solid #eee;padding:8px}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Registrations</h2>
+    <div>
+      <label>Season: <select id="seasonSelect"></select></label>
+    </div>
+
+    <h3>Submit Registration (public)</h3>
+    <div>
+      <input id="teamName" placeholder="Team name" />
+      <input id="clubName" placeholder="Club (optional)" />
+      <button id="btnSubmitReg">Submit Registration</button>
+      <div id="submitMsg"></div>
+    </div>
+
+    <h3>Admin Actions</h3>
+    <div>
+      <input id="adminToken" placeholder="Admin Token (paste after login)" style="width:60%" />
+      <button id="btnLoadRegs">Load Registrations</button>
+      <input type="file" id="csvFile" accept=".csv" />
+      <button id="btnImport">Import CSV</button>
+      <div id="importResult"></div>
+    </div>
+
+    <table id="regsTable"><thead><tr><th>ID</th><th>Team</th><th>Club</th><th>Status</th><th>Actions</th></tr></thead><tbody></tbody></table>
+  </div>
+
+<script>
+const apiBase = window.location.origin.replace(/:.*$/, ':4000') + '/api';
+let token = '';
+
+async function loadSeasons() {
+  const res = await fetch(apiBase + '/seasons');
+  const seasons = await res.json();
+  const sel = document.getElementById('seasonSelect');
+  sel.innerHTML = '';
+  seasons.forEach(s => {
+    const opt = document.createElement('option'); opt.value = s.id; opt.textContent = s.name; sel.appendChild(opt);
+  });
+}
+
+document.getElementById('btnSubmitReg').addEventListener('click', async () => {
+  const seasonId = document.getElementById('seasonSelect').value;
+  const teamName = document.getElementById('teamName').value;
+  const club = document.getElementById('clubName').value;
+  const res = await fetch(`${apiBase}/seasons/${seasonId}/registrations`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ teamName, club }) });
+  const j = await res.json();
+  document.getElementById('submitMsg').textContent = res.ok ? 'Submitted' : JSON.stringify(j);
+});
+
+document.getElementById('btnLoadRegs').addEventListener('click', async () => {
+  token = document.getElementById('adminToken').value.trim();
+  const seasonId = document.getElementById('seasonSelect').value;
+  const res = await fetch(`${apiBase}/seasons/${seasonId}/registrations`, { headers: { 'Authorization': 'Bearer ' + token } });
+  const j = await res.json();
+  if (!res.ok) { alert(JSON.stringify(j)); return; }
+  const tbody = document.querySelector('#regsTable tbody'); tbody.innerHTML='';
+  j.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${r.id}</td><td>${r.team.name}</td><td>${r.team.club||''}</td><td>${r.status}</td><td><button data-id="${r.id}" class="approve">Approve</button> <button data-id="${r.id}" class="reject">Reject</button></td>`;
+    tbody.appendChild(tr);
+  });
+  document.querySelectorAll('.approve').forEach(b=>b.addEventListener('click', updateReg));
+  document.querySelectorAll('.reject').forEach(b=>b.addEventListener('click', updateReg));
+});
+
+async function updateReg(e){
+  const id = e.target.getAttribute('data-id');
+  const action = e.target.textContent.toUpperCase();
+  const status = action === 'APPROVE' || action === 'APPROVE' ? 'APPROVED' : 'REJECTED';
+  const res = await fetch(`${apiBase}/registrations/${id}`, { method:'PATCH', headers: {'Content-Type':'application/json','Authorization':'Bearer '+token}, body: JSON.stringify({ status }) });
+  const j = await res.json();
+  if (!res.ok) alert(JSON.stringify(j)); else document.getElementById('btnLoadRegs').click();
+}
+
+// CSV import: read file and post rows as JSON
+document.getElementById('btnImport').addEventListener('click', async () => {
+  const file = document.getElementById('csvFile').files[0];
+  const seasonId = document.getElementById('seasonSelect').value;
+  token = document.getElementById('adminToken').value.trim();
+  if (!file) return alert('Select CSV file');
+  const txt = await file.text();
+  // simple CSV parse: assume header row with teamName,club
+  const lines = txt.split(/\r?\n/).filter(Boolean);
+  const header = lines.shift().split(',').map(h=>h.trim());
+  const rows = lines.map(l => {
+    const cols = l.split(',').map(c=>c.trim());
+    const obj = {};
+    header.forEach((h,i)=>obj[h]=cols[i]);
+    return obj;
+  });
+  const res = await fetch(`${apiBase}/seasons/${seasonId}/registrations/import`, { method:'POST', headers: {'Content-Type':'application/json','Authorization':'Bearer '+token}, body: JSON.stringify({ rows }) });
+  const j = await res.json();
+  document.getElementById('importResult').textContent = JSON.stringify(j, null, 2);
+});
+
+loadSeasons();
+</script>
+</body>
+</html>

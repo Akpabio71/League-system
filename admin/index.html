@@ -10,6 +10,7 @@
     input,button{padding:8px 10px;margin:6px 0;border-radius:6px;border:1px solid #ddd}
     button{cursor:pointer}
     .row{display:flex;gap:8px}
+    nav a{margin-right:12px}
   </style>
 </head>
 <body>
@@ -29,6 +30,12 @@
     <hr/>
 
     <div id="panel" style="display:none">
+      <nav>
+        <a href="/admin/index.html">Seasons</a>
+        <a href="/admin/registrations.html">Registrations</a>
+        <a href="/admin/fixtures.html">Fixtures</a>
+      </nav>
+
       <h3>Seasons</h3>
       <div id="createSeason">
         <input id="seasonName" placeholder="Season name (e.g., 2026/27)" />

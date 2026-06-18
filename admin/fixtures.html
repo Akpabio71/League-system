@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Fixtures — Admin</title>
+  <style>
+    body{font-family:Inter,system-ui,Arial;padding:20px;background:#f6f8fb}
+    .card{background:#fff;padding:16px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.06);max-width:900px;margin:auto}
+    input,button,select{padding:8px 10px;margin:6px 0;border-radius:6px;border:1px solid #ddd}
+    table{width:100%;border-collapse:collapse}
+    td,th{border:1px solid #eee;padding:8px}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Fixtures</h2>
+    <div>
+      <label>Season: <select id="seasonSelect"></select></label>
+      <input id="adminToken" placeholder="Admin Token" style="width:60%" />
+      <button id="btnGenerate">Preview Generate</button>
+      <button id="btnPersist">Generate & Persist</button>
+    </div>
+
+    <h3>Preview</h3>
+    <table id="fixturesTable"><thead><tr><th>Round</th><th>Home</th><th>Away</th><th>Date</th></tr></thead><tbody></tbody></table>
+  </div>
+
+<script>
+const apiBase = window.location.origin.replace(/:.*$/, ':4000') + '/api';
+
+async function loadSeasons() {
+  const res = await fetch(apiBase + '/seasons');
+  const seasons = await res.json();
+  const sel = document.getElementById('seasonSelect'); sel.innerHTML='';
+  seasons.forEach(s=>{ const opt=document.createElement('option'); opt.value=s.id; opt.textContent=s.name; sel.appendChild(opt); });
+}
+
+async function preview(persist){
+  const seasonId = document.getElementById('seasonSelect').value;
+  const token = document.getElementById('adminToken').value.trim();
+  const url = `${apiBase}/seasons/${seasonId}/fixtures/generate`;
+  const body = persist ? {} : { preview: true };
+  const res = await fetch(url, { method:'POST', headers: {'Content-Type':'application/json','Authorization':'Bearer '+token}, body: JSON.stringify(body) });
+  const j = await res.json();
+  if (!res.ok) return alert(JSON.stringify(j));
+  const fixtures = persist ? j.created : j.preview;
+  const tbody = document.querySelector('#fixturesTable tbody'); tbody.innerHTML='';
+  fixtures.forEach(f=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${f.round}</td><td>${f.homeTeamId}</td><td>${f.awayTeamId}</td><td>${new Date(f.matchDate).toLocaleDateString()}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+document.getElementById('btnGenerate').addEventListener('click', ()=>preview(false));
+document.getElementById('btnPersist').addEventListener('click', ()=>preview(true));
+
+loadSeasons();
+</script>
+</body>
+</html>
