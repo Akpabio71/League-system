@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>League Admin — Minimal UI</title>
+  <style>
+    body{font-family:Inter,system-ui,Arial;padding:20px;background:#f6f8fb}
+    .card{background:#fff;padding:16px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.06);max-width:720px;margin:auto}
+    input,button{padding:8px 10px;margin:6px 0;border-radius:6px;border:1px solid #ddd}
+    button{cursor:pointer}
+    .row{display:flex;gap:8px}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Admin — Sign in / Register</h2>
+    <div id="auth">
+      <input id="name" placeholder="Name (for register)" />
+      <input id="email" placeholder="Email" />
+      <input id="password" placeholder="Password" type="password" />
+      <div class="row">
+        <button id="btnRegister">Register</button>
+        <button id="btnLogin">Login</button>
+      </div>
+      <div id="authMsg"></div>
+    </div>
+
+    <hr/>
+
+    <div id="panel" style="display:none">
+      <h3>Seasons</h3>
+      <div id="createSeason">
+        <input id="seasonName" placeholder="Season name (e.g., 2026/27)" />
+        <input id="startDate" type="date" />
+        <input id="endDate" type="date" />
+        <button id="btnCreateSeason">Create</button>
+      </div>
+      <ul id="seasonsList"></ul>
+    </div>
+  </div>
+
+<script>
+const apiBase = window.location.origin.replace(/:.*$/, ':4000') + '/api';
+let token = '';
+
+async function register() {
+  const name = document.getElementById('name').value;
+  const email = document.getElementById('email').value;
+  const password = document.getElementById('password').value;
+  const res = await fetch(apiBase + '/auth/register', {
+    method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({name,email,password, role: 'ADMIN'})
+  });
+  const j = await res.json();
+  document.getElementById('authMsg').textContent = res.ok ? 'Registered. Now login.' : JSON.stringify(j);
+}
+
+async function login() {
+  const email = document.getElementById('email').value;
+  const password = document.getElementById('password').value;
+  const res = await fetch(apiBase + '/auth/login', {
+    method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({email,password})
+  });
+  const j = await res.json();
+  if (res.ok) {
+    token = j.token;
+    document.getElementById('authMsg').textContent = 'Logged in';
+    document.getElementById('panel').style.display = 'block';
+    loadSeasons();
+  } else {
+    document.getElementById('authMsg').textContent = j.error || JSON.stringify(j);
+  }
+}
+
+async function createSeason() {
+  const name = document.getElementById('seasonName').value;
+  const startDate = document.getElementById('startDate').value;
+  const endDate = document.getElementById('endDate').value;
+  const res = await fetch(apiBase + '/seasons', {
+    method: 'POST', headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token},
+    body: JSON.stringify({name,startDate,endDate})
+  });
+  const j = await res.json();
+  if (res.ok) {
+    loadSeasons();
+  } else {
+    alert(JSON.stringify(j));
+  }
+}
+
+async function loadSeasons() {
+  const res = await fetch(apiBase + '/seasons');
+  const list = await res.json();
+  const ul = document.getElementById('seasonsList');
+  ul.innerHTML = '';
+  list.forEach(s => {
+    const li = document.createElement('li');
+    li.textContent = `${s.name} — ${new Date(s.startDate).toLocaleDateString()} to ${new Date(s.endDate).toLocaleDateString()}`;
+    ul.appendChild(li);
+  });
+}
+
+document.getElementById('btnRegister').addEventListener('click', register);
+document.getElementById('btnLogin').addEventListener('click', login);
+document.getElementById('btnCreateSeason').addEventListener('click', createSeason);
+
+loadSeasons();
+</script>
+</body>
+</html>

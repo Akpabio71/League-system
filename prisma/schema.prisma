@@ -1,0 +1,98 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         Int      @id @default(autoincrement())
+  name       String
+  email      String   @unique
+  password   String
+  role       Role     @default(ADMIN)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+enum Role {
+  ADMIN
+  LEAGUE_ADMIN
+  CLUB_MANAGER
+  VIEWER
+}
+
+model Season {
+  id               Int      @id @default(autoincrement())
+  name             String
+  startDate        DateTime
+  endDate          DateTime
+  registrationOpen DateTime?
+  registrationClose DateTime?
+  status           SeasonStatus @default(DRAFT)
+  settings         Json?
+  createdById      Int
+  createdBy        User     @relation(fields: [createdById], references: [id])
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  teams            Team[]
+  fixtures         Fixture[]
+}
+
+enum SeasonStatus {
+  DRAFT
+  OPEN
+  ACTIVE
+  CLOSED
+}
+
+model Team {
+  id        Int      @id @default(autoincrement())
+  name      String
+  club      String?
+  seasonId  Int
+  season    Season   @relation(fields: [seasonId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Registration {
+  id         Int      @id @default(autoincrement())
+  seasonId   Int
+  teamId     Int
+  status     RegistrationStatus @default(PENDING)
+  notes      String?
+  submittedAt DateTime @default(now())
+
+  season Season @relation(fields: [seasonId], references: [id])
+  team   Team   @relation(fields: [teamId], references: [id])
+}
+
+enum RegistrationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Fixture {
+  id         Int      @id @default(autoincrement())
+  seasonId   Int
+  homeTeamId Int
+  awayTeamId Int
+  venue      String?
+  matchDate  DateTime
+  round      Int?
+  status     FixtureStatus @default(DRAFT)
+  createdAt  DateTime @default(now())
+
+  season Season @relation(fields: [seasonId], references: [id])
+}
+
+enum FixtureStatus {
+  DRAFT
+  SCHEDULED
+  PLAYED
+  CANCELLED
+}
