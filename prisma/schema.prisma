@@ -8,13 +8,16 @@ datasource db {
 }
 
 model User {
-  id         Int      @id @default(autoincrement())
-  name       String
-  email      String   @unique
-  password   String
-  role       Role     @default(ADMIN)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id                   Int      @id @default(autoincrement())
+  name                 String
+  email                String   @unique
+  password             String
+  role                 Role     @default(ADMIN)
+  emailVerified        Boolean  @default(false)
+  failedLoginAttempts  Int      @default(0)
+  lockedUntil          DateTime?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 }
 
 enum Role {
@@ -95,4 +98,39 @@ enum FixtureStatus {
   SCHEDULED
   PLAYED
   CANCELLED
+}
+
+// Authentication / Session models
+model RefreshToken {
+  id          String   @id @default(uuid())
+  userId      Int
+  tokenHash   String
+  expiresAt   DateTime
+  revoked     Boolean  @default(false)
+  replacedBy  String?
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model EmailVerificationToken {
+  id         String   @id @default(uuid())
+  userId     Int
+  token      String   @unique
+  expiresAt  DateTime
+  used       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model PasswordResetToken {
+  id         String   @id @default(uuid())
+  userId     Int
+  token      String   @unique
+  expiresAt  DateTime
+  used       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
 }
