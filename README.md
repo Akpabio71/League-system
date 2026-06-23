@@ -1,15 +1,105 @@
-# Football League — Admin scaffold
+NexGen Esport
 
-This scaffold provides a starting point for the Admin system: auth, DB schema, and seasons CRUD.
+NexGen Esport is a competition management platform focused on organized esports leagues, clubs, players, operators, and competition governance.
 
-Quickstart:
-1. Copy files into a project folder.
-2. npm install
-3. Copy .env.example -> .env and set DATABASE_URL and JWT_SECRET.
-4. npx prisma migrate dev --name init
-5. npm run dev
-6. Visit http://localhost:4000/admin/index.html (or open the file directly). The admin UI expects the API on port 4000.
+The MVP is designed around structured league operations with strong administrative control, auditability, dispute management, standings management, and operational oversight.
 
-Notes:
-- This is a minimal scaffold for rapid iteration. Do not use JS JWT storage in production; prefer HttpOnly cookies for session tokens.
-- Next tasks: registration endpoints and UI, fixture generator service, background jobs.
+---
+
+# Project Goals
+
+- Manage organized esports competitions
+- Support players and clubs
+- Manage seasons and divisions
+- Automate competition workflows
+- Handle disputes and sanctions
+- Provide realtime updates
+- Maintain complete audit history
+- Operate securely and reliably
+
+---
+
+# MVP Scope
+
+## Core Modules
+
+### Identity & Access
+
+- Registration
+- Authentication
+- Authorization
+- Role Management
+
+### Player Management
+
+- Player Profiles
+- Statistics
+- Competitive Status
+
+### Club Management
+
+- Clubs
+- Membership
+- Recruitment
+
+### Competition Management
+
+- Seasons
+- Divisions
+- Fixtures
+- Matches
+- Results
+
+### Governance
+
+- Disputes
+- Penalties
+- Sanctions
+- Appeals
+
+### Rankings
+
+- Standings
+- Rewards
+- Leaderboards
+
+### Operations
+
+- Notifications
+- Realtime Updates
+- Audit Logs
+- Moderation
+
+### Infrastructure
+
+- Monitoring
+- Backups
+- Deployment
+- Recovery
+
+---
+
+# Technology Stack
+
+## Frontend
+- React
+- Next.js
+- TypeScript
+
+## Backend
+
+- Next.js API Routes / Server Actions
+- TypeScript
+
+## Database
+
+- PostgreSQL
+- Prisma ORM
+
+## Realtime
+
+- Pusher or Supabase Realtime
+
+## Storage
+
+- S3 Compatible Storage
