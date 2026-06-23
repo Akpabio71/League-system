@@ -1,0 +1,80 @@
+# NexGen MVP Local Development Stack
+# Run: docker-compose up -d
+
+version: '3.9'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: nexgen-postgres
+    environment:
+      POSTGRES_DB: nexgen_mvp_local
+      POSTGRES_USER: nexgen_user
+      POSTGRES_PASSWORD: nexgen_dev_password
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infrastructure/db/init.sql:/docker-entrypoint-initdb.d/01-init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nexgen_user -d nexgen_mvp_local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - nexgen-network
+
+  # Redis for Job Queue & Caching
+  redis:
+    image: redis:7-alpine
+    container_name: nexgen-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - nexgen-network
+
+  # pgAdmin for Database Management (Optional)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: nexgen-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@nexgen.local
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    networks:
+      - nexgen-network
+
+  # Redis Commander for Redis Management (Optional)
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: nexgen-redis-commander
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    ports:
+      - "8081:8081"
+    depends_on:
+      - redis
+    networks:
+      - nexgen-network
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  nexgen-network:
+    driver: bridge
